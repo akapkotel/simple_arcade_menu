@@ -2,8 +2,19 @@ This is a simple in-game menu-builder for Arcade games made in Python. It requir
 basically a bunch of classes defining how Arcade should display clickable elements and what functions to call when they
 are activated.
 
-To make it work you must import it: at least Cursor, Menu and Button classes in your game script. You do not even need
-to make your own implementations of methods.
+1. INSTALLATION:
+
+To install simple_arcade_menu just open terminal and write:
+
+pip3 install simple_arcade_menu
+
+To check if everything works fine, just run:
+
+[TODO: test template]
+
+2. USAGE:
+
+To make it work you must import in your main game script: at least Cursor, Menu and Button classes in your game script. You do not even need to make your own implementations of methods.
 
 SharedVariable:
 This class makes it possible to share a common value between many objects in the game and update them dynamically. Just
@@ -48,5 +59,5 @@ the callbacks to toggle_submenu() method of your Menu with the 'name' of your Su
 
 IMPORTANT: app_hook attribute of Menu and Cursor must be the same arcade.Window object!
 
-Licensing:
+3. LICENSING:
 For license look at the LICENSE file.
