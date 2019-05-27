@@ -6,7 +6,7 @@ are activated.
 
 To install simple_arcade_menu just open terminal and write:
 
-pip3 install simple_arcade_menu
+[NOT UPLOADED YET!] pip3 install simple_arcade_menu
 
 To check if everything works fine, just run:
 
