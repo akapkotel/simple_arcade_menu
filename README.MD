@@ -33,12 +33,12 @@ So, the order of imports, instantiating classes and handling them in your game s
 1. SharedVariable - which is the class you need to assign it's instances as the values for all attributes and other
 variables you need to be changed with usage of Slider and RadioButton elements of the Menu
 2. Cursor class object and implement arcade methods: on_mouse_motion(), on_mouse_press(), on_mouse_drag() and
-on_mouse_release() to call the Cursor methods
+on_mouse_release() to call the Cursor methods instead.
 3. List of MenuElement objects (e.g. Button) - with at least one element.
 4. (Optional) arcade.Texture object as background for menu
-5. At least one SubMenu class object with List from (2) passed as menu_elements argument, and (optional) texture from
-(3) passed as background argument.
-6. Menu class object with SubMenu from (4) passed as main_menu argument.
+5. At least one SubMenu class object with List from (3) passed as menu_elements argument, and (optional) texture from
+(4) passed as background argument.
+6. Menu class object with SubMenu from (5) passed as main_menu argument.
 7. Adding Cursor on_update() and Menu update() methods calls to the on_update() method in your game.
 8. Adding Cursor draw() and Menu draw() methods calls to the on_draw() method in your game.
 9. Logic determining if Menu and Cursor should be updated and drawn in current frame are up to you.
