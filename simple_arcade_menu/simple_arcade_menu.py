@@ -103,12 +103,12 @@ class SharedVariable:
 
     shared_variables = []  # 'public' list of all the SharedVariable instances used by the Menu class
 
-    def __init__(self, value: int or float or str, associated_objects: list):
+    def __init__(self, value: bool or int or float or str, associated_objects: list):
         """
         SharedVariable is an internal object used to assure that value of variables assigned to different objects in the
         application, especially to the MenuElement objects and arcade.Window attributes, will be the same.
 
-        :param value: int, float or str -- value of variable assigned to this shared object
+        :param value: bool, int, float or str -- value of variable assigned to this shared object
         :param associated_objects: list -- list of the objects associated to the value and updated accordingly
         """
         self._value = value
@@ -165,8 +165,8 @@ class Cursor(arcade.Sprite):
 
         :param app_hook: arcade.Window object -- instance of arcade.Window class required for Menu functions to work
         with the app
-        :param filepath: str -- absolute TESTS_PATH to the cursor image
-        :param filename: str -- name of the cursor image
+        :param filepath: str -- absolute TESTS_PATH to the cursor texture
+        :param filename: str -- name of the cursor texture
         :param angle: int -- angle in degrees (default: 30)
         :param menu_only: bool -- if the cursor should be displayed only in the game menu (default: True)
         :param hide_os_cursor: bool -- if system cursor should be hidden and replaced with this one (default: True)
@@ -334,7 +334,7 @@ class Menu:
 
 
 class SubMenu:
-    """A submenu is just a string name, bunch of MenuElements put into the list and background image. Menu navigates
+    """A submenu is just a string name, bunch of MenuElements put into the list and background texture. Menu navigates
     through its SubMenus to offer user multi-leveled menus in games."""
 
     def __init__(self, name: str = "MainMenu", menu_elements: list = None, background=None, main=False):
@@ -345,7 +345,7 @@ class SubMenu:
         :param menu_elements: list -- list of MenuElements this SubMenu object should display when activated. Each
         button request must be an instance of Menu.Button object. See the '__init__' method for it' initializing
         parameters.
-        :param background: arcade.load_texture() -- an image displayed as this SubMenu background, make sure that it's
+        :param background: arcade.load_texture() -- an texture displayed as this SubMenu background, make sure that it's
         size is not larger than arcade.Window size.
         :param main: bool -- if this is a top-level SubMenu of Menu (if not, pressing ESC would move player out to the
         top-level SubMenu.
@@ -455,7 +455,7 @@ class Button(MenuElement):
                  border_color: arcade.color = BLACK,
                  text_color: arcade.color = BLACK,
                  font_size: int = 20,
-                 image=None,
+                 texture: arcade.Texture = None,
                  function: callable = None):
         """
         Initializing a new button remember to set up the function as 'function' parameter, otherwise button would do
@@ -472,7 +472,7 @@ class Button(MenuElement):
         :param border_color: arcade.color -- color of the button's outline (default: black)
         :param text_color: arcade.color -- color of the button's name (default: black)
         :param font_size: int -- size of the button text
-        :param image: arcade.load_texture() -- an optional texture to be displayed as button's background
+        :param texture: arcade.Texture -- an optional texture to be displayed as button's background
         :param function: function() -- function called when button is pressed, pass it WITHOUT parentheses!
         """
         super().__init__(name, pos_x, pos_y, function)
@@ -492,11 +492,10 @@ class Button(MenuElement):
         self.top = self.center_y + (self.height / 2)
         self.bottom = self.top - self.height
 
-        self.image = image
+        self.texture = texture
         self.image_alpha = 255
 
     def check_if_cursor_above(self, cursor_x: float, cursor_y: float):
-        """"""
         return self.left < cursor_x < self.right and self.bottom < cursor_y < self.top
 
     def on_press(self):
@@ -507,23 +506,25 @@ class Button(MenuElement):
             self.function()
 
     def update(self):
-        if self.image is not None:
-            self.image_alpha = 125 if self.mouse_above else 255
-        else:
+        if self.texture is None:
             self.current_color = self.highlight_color if self.mouse_above else self.color
+        else:
+            self.image_alpha = 125 if self.mouse_above else 255
 
     def draw(self):
         """Display this button on the screen."""
-        if self.image is None:
+        # Button's body:
+        if self.texture is None:
             arcade.draw_lrtb_rectangle_filled(self.left, self.right, self.top, self.bottom, self.current_color)
-            arcade.draw_text(self.name, self.left + self.font_size, self.bottom + (self.height / 3), self.text_color,
-                             self.font_size, align="center", anchor_x="left")
             if self.border_width > 0:
                 arcade.draw_lrtb_rectangle_outline(self.left - 1, self.right + 1, self.top + 1, self.bottom - 1,
                                                    self.border_color, self.border_width)
         else:
-            # TODO: drawing the button's image background [ ], test it [ ]
-            pass
+            arcade.draw_texture_rectangle(self.center_x, self.center_y, self.width, self.height, self.texture,
+                                          alpha=self.image_alpha)
+        # Button's text:
+        arcade.draw_text(self.name, self.left + self.font_size, self.bottom + (self.height / 3), self.text_color,
+                         self.font_size, align="center", anchor_x="left")
 
 
 class Slider(MenuElement):
@@ -642,81 +643,122 @@ class Slider(MenuElement):
         return value if isinstance(self._variable_min, float) else int(value)
 
 
-class CheckButton(MenuElement):
+class CheckBox(MenuElement):
     """
     This element represents a simple switch button or check button which user can switch between two states: active or
     inactive and by so control the boolean value of some variable.
 
-    TODO: check-button widget [ ], test it [ ]
+    TODO: check-button widget [x][x][ ], test it [ ]
     """
 
-    def __init__(self, name: str = "CheckButton",
-                 variable: SharedVariable = None,
+    class IndicatorShape:
+        def __init__(self, pos_x, pos_y, size, shape, color, texture):
+            self.x = pos_x
+            self.y = pos_y
+            self.size = size
+            self.shape = shape
+            self.color = color
+            self.texture = texture
+
+        def draw(self):
+            if self.texture is not None:
+                arcade.draw_texture_rectangle(self.x, self.y, self.size, self.size, self.texture)
+            else:
+                if self.shape == "SQUARE":
+                    arcade.draw_rectangle_filled(self.x, self.y, self.size, self.size, self.color)
+                elif self.shape == "TICK":
+                    start_point = (self.x - (self.size / 2), self.y)
+                    turn_point = (self.x - (self.size / 4), self.y - (self.size / 2))
+                    end_point = (self.x + (self.size / 2), self.y + (self.size / 2))
+                    arcade.draw_lines((start_point, turn_point, turn_point, end_point), self.color, 3)
+                elif self.shape == "CROSS":
+                    left_top = (self.x - (self.size / 2), self.y + (self.size / 2))
+                    left_bottom = (self.x - (self.size / 2), self.y - (self.size / 2))
+                    right_top = (self.x + (self.size / 2), self.y + (self.size / 2))
+                    right_bottom = (self.x + (self.size / 2), self.y - (self.size / 2))
+                    arcade.draw_lines((left_top, right_bottom, left_bottom, right_top), self.color, 3)
+
+    def __init__(self,
+                 variable: SharedVariable,
+                 checked_value=None,
+                 unchecked_value=None,
+                 name: str = "CheckBox",
                  pos_x: float = 0.0,
                  pos_y: float = 0.0,
                  function: callable = None,
                  state: bool = False,
-                 checkbox_size: float = 10.0,
-                 checkbox_color: arcade.Color = BLACK,
-                 tickle_color: arcade.Color = GREEN,
-                 checkbox_image: arcade.Texture = None,
-                 tickle_image: arcade.Texture = None,
+                 checkbox_size: float = 40.0,
+                 checkbox_color: arcade.Color = WHITE,
+                 indicator_color: arcade.Color = GREEN,
+                 shape: str = "TICK",
+                 checkbox_texture: arcade.Texture = None,
+                 indicator_texture: arcade.Texture = None,
                  ):
         """
-        Initialize new CheckButton element.
+        Initialize new CheckBox element.
 
-        :param name: str -- name of the CheckButton to be displayed above it in the Menu (default: 'Checkbutton')
+        :param variable: SharedVariable -- a SharedVariable instance which value will be controlled by this CheckBox,
+        default variable type is boolean.
+        :param checked_value: object -- alternative value assigned to the variable if CheckBox is checked
+        :param unchecked_value: object -- alternative value assigned to the variable when CheckBox is unchecked
+        :param name: str -- name of the CheckBox to be displayed above it in the Menu (default: 'Checkbutton')
         :param pos_x: float -- x coordinate of the Slider center (default: 0.0)
         :param pos_y: float -- y coordinate (default: 0.0)
         :param function: callable -- function to be called when element is clicked
-        :param state: bool -- if the CheckButton is activated or not (default: False)
+        :param state: bool -- if the CheckBox is activated or not (default: False)
         :param checkbox_size: float -- x and y size of the element (default: 10.0 x 10.0)
         :param checkbox_color: arcade.Color -- color of the box (default: arcade.color.BLACK)
-        :param checkbox_image: arcade.Texture -- alternatively you can set texture instead of color and size
-        :param tickle_color: arcade.Color -- color of the tickle pattern (default: arcade.color.GREEN)
-        :param tickle_image: arcade.Texture -- alternatively you can set an image
+        :param checkbox_texture: arcade.Texture -- alternatively you can set texture instead of color and size
+        :param shape: str -- shape state indicator takes, must be one of: 'TICK', 'CROSS', 'SQUARE' or None.
+        :param indicator_color: arcade.Color -- color of the tickle pattern (default: arcade.color.GREEN)
+        :param indicator_texture: arcade.Texture -- alternatively you can set an texture
         """
         super().__init__(name, pos_x, pos_y, function)
 
         self.state = state  # inner state of the GUI element
         self.variable = variable  # variable controlled by the inner state
+        self.unchecked_value = False if unchecked_value is None else unchecked_value
+        self.checked_value = True if checked_value is None else checked_value
 
         self.box_size = checkbox_size
         self.box_color = checkbox_color
-        self.box_image = checkbox_image
-        self.tickle_color = tickle_color
-        self.tickle_image = tickle_image
+        self.box_texture = checkbox_texture
+
+        self.left = self.center_x - (self.box_size / 2)
+        self.right = self.left + self.box_size
+        self.top = self.center_y + (self.box_size / 2)
+        self.bottom = self.top - self.box_size
+
+        self.indicator = CheckBox.IndicatorShape(pos_x, pos_y, self.box_size, shape, indicator_color, indicator_texture)
+
+    def check_if_cursor_above(self, cursor_x: float, cursor_y: float):
+        return self.left < cursor_x < self.right and self.bottom < cursor_y < self.top
 
     def on_press(self):
         self.state = not self.state
-
-    def on_mouse_over(self):
-        """
-        Called when the Cursor is hoovering above this Element. Called automatically by the Menu class. Implement this
-        in the deriving classes.
-        """
-        pass
+        self.variable.value = self.checked_value if self.state else self.unchecked_value
 
     def update(self):
         """
         Update attributes of this Element. Called automatically by the Menu class. Implement this in the deriving
         classes.
         """
-        self.variable.value = self.state
+        pass
 
     def draw(self):
         """
         Display this button on the screen. Called automatically by the Menu class. Implement this in the deriving
         classes.
         """
-        if self.box_image:
-            arcade.draw_texture_rectangle(self.center_x, self.center_y, self.box_image.width, self.box_image.height,
-                                          self.box_image)
-            if self.state:
-                arcade.draw_texture_rectangle(self.center_x, self.center_y, self.tickle_image.width,
-                                              self.tickle_image.height, self.tickle_image)
+        # box:
+        if self.box_texture:
+            arcade.draw_texture_rectangle(self.center_x, self.center_y, self.box_texture.width, self.box_texture.height,
+                                          self.box_texture)
         else:
             arcade.draw_rectangle_outline(self.center_x, self.center_y, self.box_size, self.box_size, self.box_color)
+        # state indicator:
+        if self.state:
+            self.indicator.draw()
 
 
 class TextLabel(MenuElement):
